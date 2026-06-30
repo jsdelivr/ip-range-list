@@ -1,0 +1,69 @@
+{
+	"name": "ip-range-list",
+	"version": "0.1.0",
+	"description": "An IP address range list with IPv4 and IPv6 support.",
+	"keywords": [
+		"ip",
+		"ipv4",
+		"ipv6",
+		"cidr",
+		"subnet",
+		"ip-range",
+		"ip-address",
+		"allowlist",
+		"blocklist"
+	],
+	"license": "MIT",
+	"type": "module",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/jsdelivr/ip-range-list.git"
+	},
+	"bugs": {
+		"url": "https://github.com/jsdelivr/ip-range-list/issues"
+	},
+	"exports": {
+		".": {
+			"types": "./dist/esm/index.d.ts",
+			"import": "./dist/esm/index.js",
+			"require": "./dist/cjs/bundle.cjs",
+			"default": "./dist/umd/bundle.js"
+		}
+	},
+	"main": "./dist/cjs/bundle.cjs",
+	"module": "./dist/esm/index.js",
+	"jsdelivr": "./dist/umd/bundle.min.js",
+	"types": "./dist/esm/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"engines": {
+		"node": ">=20"
+	},
+	"scripts": {
+		"build": "rm -rf dist && npm run build:esm && npm run build:bundle && npm run build:umd:minify",
+		"build:esm": "tsc --project tsconfig.json",
+		"build:bundle": "rollup --config",
+		"build:umd:minify": "terser dist/umd/bundle.js --output dist/umd/bundle.min.js --source-map 'content=dist/umd/bundle.js.map,url=bundle.min.js.map'",
+		"typecheck": "tsc --project tsconfig.json --noEmit",
+		"test": "npm run lint && npm run typecheck && npm run test:typecheck && npm run test:unit",
+		"test:unit": "mocha",
+		"test:dist": "node test/dist.js",
+		"test:typecheck": "tsc --project test/tsconfig.json",
+		"lint": "eslint .",
+		"lint:fix": "eslint --fix ."
+	},
+	"devDependencies": {
+		"@martin-kolarik/eslint-config": "^9.0.1",
+		"@rollup/plugin-node-resolve": "^16.0.3",
+		"@tsconfig/strictest": "^2.0.8",
+		"@types/mocha": "^10.0.0",
+		"@types/node": "^22.0.0",
+		"eslint": "^10.0.0",
+		"mocha": "^11.0.0",
+		"rollup": "^4.62.2",
+		"terser": "^5.48.0",
+		"tsx": "^4.0.0",
+		"typescript": "^5.0.0"
+	}
+}
