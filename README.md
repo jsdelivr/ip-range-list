@@ -49,13 +49,14 @@ Creates an empty mutable list.
 ### `.addAddress(address)`
 
 Adds one IPv4 or IPv6 address and returns the same list. Valid IPv4-mapped IPv6 input such as `::ffff:192.0.2.1` is
-equivalent to `192.0.2.1`.
+equivalent to `192.0.2.1`. Other valid IPv6 literals with dotted IPv4 tails, such as `::192.0.2.1`, are accepted as
+IPv6 addresses.
 
 ### `.addSubnet(cidr)`
 
 Adds a CIDR subnet and returns the same list. Host bits are normalized, so `192.0.2.9/24` adds `192.0.2.0` through
-`192.0.2.255`. Prefixes for dotted IPv4 use `/0` through `/32`; IPv6 prefixes, including mapped IPv6 text, use `/0`
-through `/128`.
+`192.0.2.255`. Prefixes for dotted IPv4 and IPv4-mapped IPv6 text use `/0` through `/32`; other IPv6 prefixes use
+`/0` through `/128`.
 
 ### `.addRange(start, end)`
 
@@ -102,8 +103,8 @@ let ranges = IPRangeList.fromCSV(`
 - IPv4 is stored as IPv4-mapped IPv6 (`::ffff:0:0/96`), so dotted IPv4 and mapped IPv6 candidates compare identically.
 - Public mutation methods reject malformed addresses, malformed CSV, and unsupported input types with `TypeError`.
 - Out-of-range CIDR prefix lengths and reversed ranges throw `RangeError`.
-- Direct public address input is strict: it does not trim whitespace, and zone identifiers and IPv4-compatible dotted
-  IPv6 forms are rejected. CSV input trims outer whitespace.
+- Direct public address input is strict: it does not trim whitespace, zone identifiers are rejected, and dotted IPv4
+  tails are accepted only in valid IPv6 tail position. CSV input trims outer whitespace.
 
 Bulk CSV loading converts addresses to one-address ranges, then sorts and merges all ranges once. Lookups use binary
 search over the canonical ranges.
