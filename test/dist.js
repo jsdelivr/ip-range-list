@@ -10,6 +10,7 @@ const packageDirectory = path.resolve(import.meta.dirname, `../node_modules/${pa
 
 describe('dist', () => {
 	before(() => {
+		fs.mkdirSync(packageDirectory, { recursive: true });
 		fs.cpSync(path.resolve(import.meta.dirname, '../package.json'), path.join(packageDirectory, 'package.json'), { recursive: true });
 		fs.cpSync(path.resolve(import.meta.dirname, '../dist'), path.join(packageDirectory, 'dist'), { recursive: true });
 	});
