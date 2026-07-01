@@ -4,6 +4,7 @@ const textDecoder = new TextDecoder();
 type Interval = readonly [ start: bigint, end: bigint ];
 
 const invalidAddress = (value: unknown): TypeError => new TypeError(`Invalid IP address: ${String(value)}`);
+const isIPv4Mapped = (value: bigint): boolean => (value >> 32n) === 0xffffn;
 
 function parseIPv4 (address: string): bigint | null {
 	const parts = address.split('.');
@@ -83,13 +84,7 @@ function parseIPv6 (address: string): bigint | null {
 		return null;
 	}
 
-	const value = groups.reduce((result, group) => (result << 16n) + BigInt(`0x${group}`), 0n);
-
-	if (hadIPv4Tail && (value >> 32n) !== 0xffffn) {
-		return null;
-	}
-
-	return value;
+	return groups.reduce((result, group) => (result << 16n) + BigInt(`0x${group}`), 0n);
 }
 
 function parseAddress (value: unknown): bigint {
@@ -119,7 +114,7 @@ function parseSubnet (value: unknown): Interval {
 
 	const address = value.slice(0, separator);
 	const prefixText = value.slice(separator + 1);
-	const bits = address.includes(':') ? 128 : 32;
+	const rawBits = address.includes(':') ? 128 : 32;
 
 	if (!/^\d+$/.test(prefixText)) {
 		throw new TypeError(`Invalid subnet prefix: ${prefixText}`);
@@ -127,11 +122,17 @@ function parseSubnet (value: unknown): Interval {
 
 	const prefix = Number(prefixText);
 
+	if (prefix > rawBits) {
+		throw new RangeError(`Subnet prefix must be between 0 and ${rawBits}`);
+	}
+
+	const target = parseAddress(address);
+	const bits = isIPv4Mapped(target) ? 32 : rawBits;
+
 	if (prefix > bits) {
 		throw new RangeError(`Subnet prefix must be between 0 and ${bits}`);
 	}
 
-	const target = parseAddress(address);
 	const size = 1n << BigInt(bits - prefix);
 	const start = (target / size) * size;
 
@@ -169,7 +170,7 @@ function mergeIntervals (intervals: Interval[]): Interval[] {
 
 function formatAddress (value: bigint): string {
 	// format IPv4-mapped IPv6
-	if ((value >> 32n) === 0xffffn) {
+	if (isIPv4Mapped(value)) {
 		const ipv4 = value & 0xffffffffn;
 		return `::ffff:${Number((ipv4 >> 24n) & 0xffn)}.${Number((ipv4 >> 16n) & 0xffn)}.${Number((ipv4 >> 8n) & 0xffn)}.${Number(ipv4 & 0xffn)}`;
 	}

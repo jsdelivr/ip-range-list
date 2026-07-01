@@ -146,8 +146,6 @@ const invalidAddresses: readonly unknown[] = [
 	'2001:db8:00000::1',
 	'2001:db8::gggg',
 	'fe80::1%eth0',
-	'::192.0.2.1',
-	'2001:db8::192.0.2.1',
 	42,
 	null,
 	undefined,
@@ -218,6 +216,23 @@ describe('IPRangeList', () => {
 			assert.equal(ranges.contains(maxIPv6), true);
 		});
 
+		it('should accept IPv6 literals with embedded IPv4 tails', () => {
+			const ranges = new IPRangeList()
+				.addAddress('::192.0.2.1')
+				.addAddress('2001:db8::192.0.2.1');
+
+			assert.equal(ranges.contains('::192.0.2.1'), true);
+			assert.equal(ranges.contains('::c000:201'), true);
+			assert.equal(ranges.contains('2001:db8::192.0.2.1'), true);
+			assert.equal(ranges.contains('2001:db8::c000:201'), true);
+			assert.equal(ranges.contains('::ffff:192.0.2.1'), false);
+
+			assert.deepEqual(snapshot(ranges.ranges), [
+				{ start: '::c000:201', end: '::c000:201' },
+				{ start: '2001:db8::c000:201', end: '2001:db8::c000:201' },
+			]);
+		});
+
 		it('should reject malformed addresses', () => {
 			const ranges = new IPRangeList();
 
@@ -234,6 +249,21 @@ describe('IPRangeList', () => {
 			assert.equal(ranges.contains('192.0.2.0'), true);
 			assert.equal(ranges.contains('192.0.2.255'), true);
 			assert.equal(ranges.check('::ffff:192.0.2.42'), true);
+			assert.equal(ranges.contains('192.0.1.255'), false);
+			assert.equal(ranges.contains('192.0.3.0'), false);
+
+			assert.deepEqual(snapshot(ranges.ranges), [{
+				start: '::ffff:192.0.2.0',
+				end: '::ffff:192.0.2.255',
+			}]);
+		});
+
+		it('should treat IPv4-mapped subnets as IPv4 CIDRs', () => {
+			const ranges = new IPRangeList().addSubnet('::ffff:192.0.2.9/24');
+
+			assert.equal(ranges.contains('192.0.2.0'), true);
+			assert.equal(ranges.contains('192.0.2.255'), true);
+			assert.equal(ranges.contains('::ffff:192.0.2.42'), true);
 			assert.equal(ranges.contains('192.0.1.255'), false);
 			assert.equal(ranges.contains('192.0.3.0'), false);
 
@@ -274,6 +304,7 @@ describe('IPRangeList', () => {
 			const ranges = new IPRangeList();
 
 			expectRangeError(() => ranges.addSubnet('192.0.2.1/33'));
+			expectRangeError(() => ranges.addSubnet('::ffff:192.0.2.1/33'));
 			expectRangeError(() => ranges.addSubnet('2001:db8::1/129'));
 			expectRangeError(() => ranges.addSubnet('bad/999'));
 		});
