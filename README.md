@@ -83,31 +83,16 @@ Returns a detached snapshot of canonical merged ranges:
 
 Range endpoints always render as IPv6 strings. Mutating a returned snapshot cannot mutate the list.
 
-### `IPRangeList.fromCSV(csv)`
-
-Creates a list from a string or `Uint8Array`, including Node.js `Buffer`. CSV input is headerless, with one IPv4 or
-IPv6 address or CIDR prefix per row. Blank rows and rows beginning with `#` are ignored; cells are trimmed. The method
-does not read files, so callers own their I/O boundary.
-
-```js
-let ranges = IPRangeList.fromCSV(`
-198.51.100.0/24
-203.0.113.8
-2001:db8::/32
-`);
-```
-
 ## Normalization and errors
 
 - Overlapping and adjacent ranges merge into one canonical inclusive interval.
 - IPv4 is stored as IPv4-mapped IPv6 (`::ffff:0:0/96`), so dotted IPv4 and mapped IPv6 candidates compare identically.
-- Public mutation methods reject malformed addresses, malformed CSV, and unsupported input types with `TypeError`.
+- Public mutation methods reject malformed addresses and unsupported input types with `TypeError`.
 - Out-of-range CIDR prefix lengths and reversed ranges throw `RangeError`.
 - Direct public address input is strict: it does not trim whitespace, zone identifiers are rejected, and dotted IPv4
-  tails are accepted only in valid IPv6 tail position. CSV input trims outer whitespace.
+  tails are accepted only in valid IPv6 tail position.
 
-Bulk CSV loading converts addresses to one-address ranges, then sorts and merges all ranges once. Lookups use binary
-search over the canonical ranges.
+Lookups use binary search over the canonical ranges.
 
 ## Development
 

@@ -130,7 +130,6 @@ const cidrCases: readonly FixtureCase[] = [
 ];
 
 const cidrs = cidrCases.map(({ cidr }) => cidr);
-const cidrCsv = `${cidrs.join('\n')}\n`;
 const maxIPv6 = 'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff';
 
 const invalidAddresses: readonly unknown[] = [
@@ -356,7 +355,11 @@ describe('IPRangeList', () => {
 
 	describe('contains', () => {
 		it('should find addresses across merged intervals', () => {
-			const ranges = IPRangeList.fromCSV(cidrCsv);
+			const ranges = new IPRangeList();
+
+			for (const cidr of cidrs) {
+				ranges.addSubnet(cidr);
+			}
 
 			assert.deepEqual(cidrs, cidrCases.map(({ cidr }) => cidr));
 
@@ -373,7 +376,7 @@ describe('IPRangeList', () => {
 
 		it('should check every CIDR case at both boundaries and immediately outside', () => {
 			for (const { cidr, lower, upper, before, after } of cidrCases) {
-				const ranges = IPRangeList.fromCSV(cidr);
+				const ranges = new IPRangeList().addSubnet(cidr);
 
 				assert.equal(ranges.contains(lower), true, `${cidr} lower boundary`);
 				assert.equal(ranges.contains(upper), true, `${cidr} upper boundary`);
@@ -471,81 +474,6 @@ describe('IPRangeList', () => {
 				{ start: '2001:db8::1', end: '2001:db8::1' },
 				{ start: '2001:db8:0:1:2:3:4:5', end: '2001:db8:0:1:2:3:4:5' },
 			]);
-		});
-	});
-
-	describe('fromCSV', () => {
-		it('should load headerless addresses and CIDRs', () => {
-			const ranges = IPRangeList.fromCSV('192.0.2.1/24\n198.51.100.9\n2001:db8::1\n');
-
-			assert.equal(ranges.contains('192.0.2.255'), true);
-			assert.equal(ranges.contains('198.51.100.9'), true);
-			assert.equal(ranges.contains('198.51.100.10'), false);
-			assert.equal(ranges.contains('2001:db8::1'), true);
-			assert.equal(ranges.contains('2001:db8::2'), false);
-		});
-
-		it('should ignore empty rows and comments', () => {
-			const ranges = IPRangeList.fromCSV('\n# comment\n 192.0.2.1/24 \n 198.51.100.9 \n');
-
-			assert.equal(ranges.contains('192.0.2.255'), true);
-			assert.equal(ranges.contains('198.51.100.9'), true);
-			assert.equal(ranges.contains('198.51.100.10'), false);
-		});
-
-		it('should accept Buffer input', () => {
-			const ranges = IPRangeList.fromCSV(Buffer.from('192.0.2.128/26\r\n192.0.2.0/26\r\n'));
-
-			assert.equal(ranges.contains('192.0.2.0'), true);
-			assert.equal(ranges.contains('192.0.2.127'), false);
-			assert.equal(ranges.contains('192.0.2.128'), true);
-			assert.equal(ranges.contains('192.0.2.191'), true);
-		});
-
-		it('should accept Uint8Array input', () => {
-			const csv = new TextEncoder().encode('192.0.2.128/26\r\n192.0.2.0/26\r\n');
-			const ranges = IPRangeList.fromCSV(csv);
-
-			assert.equal(ranges.contains('192.0.2.0'), true);
-			assert.equal(ranges.contains('192.0.2.127'), false);
-			assert.equal(ranges.contains('192.0.2.128'), true);
-			assert.equal(ranges.contains('192.0.2.191'), true);
-		});
-
-		it('should merge unsorted CSV ranges', () => {
-			const ranges = IPRangeList.fromCSV('192.0.2.128/26\r\n192.0.2.0/26\r\n192.0.2.192/26\r\n192.0.2.64/26\r\n');
-
-			assert.deepEqual(snapshot(ranges.ranges), [{
-				start: '::ffff:192.0.2.0',
-				end: '::ffff:192.0.2.255',
-			}]);
-		});
-
-		it('should not retain caller state', () => {
-			const csv = '192.0.2.128/26\r\n192.0.2.0/26\r\n192.0.2.192/26\r\n192.0.2.64/26\r\n';
-			const ranges = IPRangeList.fromCSV(Buffer.from(csv));
-			const second = IPRangeList.fromCSV(csv);
-
-			ranges.addAddress('192.0.3.1');
-			assert.equal(second.contains('192.0.3.1'), false);
-		});
-
-		it('should reject invalid input types', () => {
-			for (const value of [ null, 42, {}]) {
-				expectTypeError(() => (IPRangeList.fromCSV as (csv: unknown) => unknown)(value));
-			}
-		});
-
-		it('should reject comma-containing rows', () => {
-			for (const value of [ 'prefix,unexpected\n192.0.2.0/24', '192.0.2.0/24,ignored' ]) {
-				expectTypeError(() => IPRangeList.fromCSV(value));
-			}
-		});
-
-		it('should reject header rows and quoted rows', () => {
-			for (const value of [ 'prefix\n192.0.2.0/24', 'not an address', '"192.0.2.0/24"' ]) {
-				expectTypeError(() => IPRangeList.fromCSV(value));
-			}
 		});
 	});
 });

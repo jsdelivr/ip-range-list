@@ -1,5 +1,4 @@
 const IPV4_MAPPED_PREFIX = 0xffff00000000n;
-const textDecoder = new TextDecoder();
 
 type Interval = readonly [ start: bigint, end: bigint ];
 
@@ -139,35 +138,6 @@ function parseSubnet (value: unknown): Interval {
 	return [ start, start + size - 1n ];
 }
 
-function parseCsvEntry (value: string): Interval {
-	if (value.includes('/')) {
-		return parseSubnet(value);
-	}
-
-	const address = parseAddress(value);
-	return [ address, address ];
-}
-
-function mergeIntervals (intervals: Interval[]): Interval[] {
-	const sorted = [ ...intervals ].sort((left, right) => left[0] < right[0] ? -1 : left[0] > right[0] ? 1 : 0);
-	const merged: Interval[] = [];
-
-	for (const [ start, end ] of sorted) {
-		const previous = merged.at(-1);
-
-		if (previous === undefined || start > previous[1] + 1n) {
-			merged.push([ start, end ]);
-			continue;
-		}
-
-		if (end > previous[1]) {
-			merged[merged.length - 1] = [ previous[0], end ];
-		}
-	}
-
-	return merged;
-}
-
 function formatAddress (value: bigint): string {
 	// format IPv4-mapped IPv6
 	if (isIPv4Mapped(value)) {
@@ -295,35 +265,6 @@ export class IPRangeList {
 	/** Alias for {@link contains}, matching Node's BlockList terminology. */
 	check (address: string): boolean {
 		return this.contains(address);
-	}
-
-	/** Creates a list from headerless CSV rows containing addresses or CIDR prefixes. */
-	static fromCSV (csv: string | Uint8Array): IPRangeList {
-		if (typeof csv !== 'string' && !(csv instanceof Uint8Array)) {
-			throw new TypeError('CSV input must be a string or Uint8Array');
-		}
-
-		const content = typeof csv === 'string' ? csv : textDecoder.decode(csv);
-		const rows = content.split(/\r?\n/);
-		const intervals: Interval[] = [];
-
-		for (const row of rows) {
-			const value = row.trim();
-
-			if (value === '' || value.startsWith('#')) {
-				continue;
-			}
-
-			if (value.includes(',')) {
-				throw new TypeError(`CSV rows must contain one address or CIDR: ${value}`);
-			}
-
-			intervals.push(parseCsvEntry(value));
-		}
-
-		const list = new IPRangeList();
-		list.intervals = mergeIntervals(intervals);
-		return list;
 	}
 
 	private addInterval (start: bigint, end: bigint): this {
