@@ -10,7 +10,7 @@ export default {
 			sourcemap: true,
 		},
 		{
-			name: 'IPRangeList',
+			name: 'ipRangeList',
 			file: 'dist/umd/bundle.js',
 			format: 'umd',
 			exports: 'named',

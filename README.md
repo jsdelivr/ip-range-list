@@ -9,6 +9,8 @@ inputs as canonical, merged inclusive ranges and searches them with binary searc
 npm install ip-range-list
 ```
 
+In client-side applications, you can import the package directly via [jsDelivr CDN](https://www.jsdelivr.com/package/npm/ip-range-list).
+
 ## Use
 
 ES modules:
@@ -31,12 +33,23 @@ CommonJS:
 const { IPRangeList } = require('ip-range-list');
 ```
 
+Browser ESM:
+
+```html
+<script type="module">
+    import { IPRangeList } from 'https://cdn.jsdelivr.net/npm/ip-range-list/+esm';
+
+    let ranges = new IPRangeList();
+</script>
+```
+
 Browser UMD:
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/ip-range-list/dist/umd/bundle.min.js"></script>
 <script>
-    let ranges = new IPRangeList.IPRangeList();
+    const { IPRangeList } = window.ipRangeList;
+    let ranges = new IPRangeList();
 </script>
 ```
 
