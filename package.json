@@ -57,13 +57,13 @@
 		"@martin-kolarik/eslint-config": "^9.0.1",
 		"@rollup/plugin-node-resolve": "^16.0.3",
 		"@tsconfig/strictest": "^2.0.8",
-		"@types/mocha": "^10.0.0",
-		"@types/node": "^22.0.0",
-		"eslint": "^10.0.0",
-		"mocha": "^11.0.0",
+		"@types/mocha": "^10.0.10",
+		"@types/node": "^20.6.0",
+		"eslint": "^10.6.0",
+		"mocha": "^11.7.6",
 		"rollup": "^4.62.2",
 		"terser": "^5.48.0",
-		"tsx": "^4.0.0",
-		"typescript": "^5.0.0"
+		"tsx": "^4.22.4",
+		"typescript": "^6.0.3"
 	}
 }

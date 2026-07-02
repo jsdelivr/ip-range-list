@@ -1,6 +1,6 @@
 # ip-range-list
 
-`ip-range-list` is a dependency-free, mutable IP allow/block-list primitive for Node.js 20+. It stores IPv4 and IPv6
+`ip-range-list` is a dependency-free, mutable IP allow/block-list primitive for Node.js 20.6.0+. It stores IPv4 and IPv6
 inputs as canonical, merged inclusive ranges and searches them with binary search.
 
 ## Install
