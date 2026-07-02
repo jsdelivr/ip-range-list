@@ -36,7 +36,7 @@ Browser UMD:
 ```html
 <script src="https://cdn.jsdelivr.net/npm/ip-range-list/dist/umd/bundle.min.js"></script>
 <script>
-	let ranges = new IPRangeList.IPRangeList();
+    let ranges = new IPRangeList.IPRangeList();
 </script>
 ```
 
@@ -74,10 +74,10 @@ Returns a detached snapshot of canonical merged ranges:
 
 ```js
 [
-	{
-		start: '::ffff:192.0.2.0',
-		end: '::ffff:192.0.2.255',
-	},
+    {
+        start: '::ffff:192.0.2.0',
+        end: '::ffff:192.0.2.255',
+    },
 ]
 ```
 
