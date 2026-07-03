@@ -291,6 +291,21 @@ describe('IPRangeList', () => {
 			assert.equal(hosts.contains('2001:db8::2'), false);
 		});
 
+		it('should handle non-aligned CIDR prefixes', () => {
+			const ranges = new IPRangeList()
+				.addSubnet('10.0.0.0/27')
+				.addSubnet('8592:757c:efaf::/51');
+
+			for (let host = 0; host <= 31; host++) {
+				assert.equal(ranges.contains(`10.0.0.${host}`), true, `10.0.0.${host}`);
+			}
+
+			assert.equal(ranges.contains('10.0.0.32'), false);
+			assert.equal(ranges.contains('8592:757c:efaf::'), true);
+			assert.equal(ranges.contains('8592:757c:efaf:1fff:ffff:ffff:ffff:ffff'), true);
+			assert.equal(ranges.contains('8592:757c:efaf:2000::'), false);
+		});
+
 		it('should reject malformed subnet values', () => {
 			const ranges = new IPRangeList();
 
@@ -318,6 +333,35 @@ describe('IPRangeList', () => {
 			assert.equal(ranges.contains('192.0.2.2'), true);
 			assert.equal(ranges.contains('192.0.2.3'), true);
 			assert.equal(ranges.contains('192.0.2.4'), false);
+		});
+
+		it('should add an inclusive IPv6 range', () => {
+			const ranges = new IPRangeList().addRange('::1', '::f');
+
+			assert.equal(ranges.contains('::'), false);
+
+			for (let address = 1; address <= 0xf; address++) {
+				const candidate = `::${address.toString(16)}`;
+
+				assert.equal(ranges.contains(candidate), true, candidate);
+			}
+
+			assert.equal(ranges.contains('::10'), false);
+		});
+
+		it('should match IPv4-mapped IPv6 addresses against IPv4 ranges', () => {
+			const ranges = new IPRangeList().addRange('10.0.0.2', '10.0.0.10');
+
+			assert.equal(ranges.contains('10.0.0.2'), true);
+			assert.equal(ranges.contains('10.0.0.10'), true);
+			assert.equal(ranges.contains('192.168.0.3'), false);
+			assert.equal(ranges.contains('2.2.2.2'), false);
+			assert.equal(ranges.contains('255.255.255.255'), false);
+			assert.equal(ranges.contains('::ffff:0a00:0002'), true);
+			assert.equal(ranges.contains('::ffff:0a00:000a'), true);
+			assert.equal(ranges.contains('::ffff:c0a8:0003'), false);
+			assert.equal(ranges.contains('::ffff:0202:0202'), false);
+			assert.equal(ranges.contains('::ffff:ffff:ffff'), false);
 		});
 
 		it('should merge unsorted, duplicate, nested, overlapping, and adjacent ranges', () => {
