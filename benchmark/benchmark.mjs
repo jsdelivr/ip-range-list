@@ -279,7 +279,15 @@ try {
 	process.exit(1);
 }
 
-const prefixes = loadPrefixes(options.file);
+let prefixes;
+
+try {
+	prefixes = loadPrefixes(options.file);
+} catch (error) {
+	console.error(error.message);
+	process.exit(1);
+}
+
 const results = [];
 
 for (const [ name, impl ] of getPackageEntries(options.packageName)) {
