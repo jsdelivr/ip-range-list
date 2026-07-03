@@ -107,6 +107,49 @@ Range endpoints always render as IPv6 strings. Mutating a returned snapshot cann
 
 Lookups use binary search over the canonical ranges.
 
+## Benchmark
+
+The following benchmark compares `IPRangeList` with Node.js `net.BlockList` on [Manycast](https://manycast.net/) LACES
+anycast prefix CSV data. CSV loading and query preparation were done before timing; the measured work is only adding
+subnets to the list and checking candidate addresses.
+
+To reproduce it, download the raw LACES data from jsDelivr and filter it into CSV files with a `prefix` header and one
+CIDR per row:
+
+- `https://download.jsdelivr.com/LACES_ANYCAST_IPV4.csv.gz`
+- `https://download.jsdelivr.com/LACES_ANYCAST_IPV6.csv.gz`
+
+The source files contain multiple columns. The benchmark data used below keeps only `row[0]` prefixes that match the
+[Manycast](https://manycast.net/) recommendation: `max(row[1], row[2], row[3]) > 3 || max(row[4], row[5]) > 1`.
+
+After placing the filtered files into `benchmark/`, build the package, then run the benchmark once per IP family:
+
+```sh
+npm run build
+node --expose-gc benchmark/benchmark.mjs --family ipv4 --file benchmark/LACES_ANYCAST_IPV4.csv
+node --expose-gc benchmark/benchmark.mjs --family ipv6 --file benchmark/LACES_ANYCAST_IPV6.csv
+```
+
+Useful options include `--package <all|ip-range-list|blocklist>`, `--runs`, `--warmups`, `--large-checks`, `--chunks`,
+and `--checks-per-chunk`.
+
+Settings:
+
+- Node.js v24.6.0 on Windows 11 x64, Intel Core Ultra 9 275HX.
+- 7 measured runs after 2 warmup runs; table values are averages in milliseconds.
+- Large lookup scenario: import the full dataset once, then run 1,000,000 `contains()`/`check()` calls using addresses
+  derived from the dataset prefixes.
+- Interleaved scenario: import the dataset in 100 chunks, running 100 `contains()`/`check()` calls after each chunk.
+
+| Scenario | Family | Prefixes | `ip-range-list` | `node:net BlockList` | Result |
+| --- | --- | ---: | ---: | ---: | --- |
+| Full import | IPv4 | 15,349 | 10.28 ms | 11.76 ms | `ip-range-list` 1.14x faster |
+| 1,000,000 lookups after import | IPv4 | 15,349 | 364.19 ms | 29,951.53 ms | `ip-range-list` 82.24x faster |
+| Interleaved import/lookups | IPv4 | 15,349 | 15.56 ms | 122.22 ms | `ip-range-list` 7.86x faster |
+| Full import | IPv6 | 13,214 | 17.49 ms | 10.99 ms | `BlockList` 1.59x faster |
+| 1,000,000 lookups after import | IPv6 | 13,214 | 846.15 ms | 27,106.68 ms | `ip-range-list` 32.04x faster |
+| Interleaved import/lookups | IPv6 | 13,214 | 28.12 ms | 93.34 ms | `ip-range-list` 3.32x faster |
+
 ## Development
 
 Refer to the [contributing guide](CONTRIBUTING.md).
