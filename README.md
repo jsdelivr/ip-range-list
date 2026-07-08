@@ -1,6 +1,6 @@
 # ip-range-list
 
-A dependency-free IP allowlist/blocklist. Think Node.js `net.BlockList`, but faster.
+A dependency-free IP allowlist/blocklist. Think Node.js [`net.BlockList`](https://nodejs.org/docs/latest/api/net.html#class-netblocklist), but [faster](./benchmark).
 Accepts IPv4 and IPv6 addresses, ranges, and subnets, and uses binary search for fast lookups.
 
 ## Install
