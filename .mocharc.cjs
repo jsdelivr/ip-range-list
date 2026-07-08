@@ -5,6 +5,6 @@ module.exports = {
 	],
 	'node-option': [
 		'enable-source-maps',
-		'import=tsx',
+		'loader=ts-node/esm',
 	],
 };

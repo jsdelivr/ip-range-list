@@ -43,14 +43,13 @@
 	},
 	"scripts": {
 		"build": "rm -rf dist && npm run build:esm && npm run build:bundle && npm run build:umd:minify",
-		"build:esm": "tsc --project tsconfig.json",
+		"build:esm": "tsc",
 		"build:bundle": "rollup --config",
 		"build:umd:minify": "terser dist/umd/bundle.js --output dist/umd/bundle.min.js --source-map 'content=dist/umd/bundle.js.map,url=bundle.min.js.map'",
-		"typecheck": "tsc --project tsconfig.json --noEmit",
-		"test": "npm run lint && npm run typecheck && npm run test:typecheck && npm run test:unit",
+		"typecheck": "tsc --noEmit",
+		"test": "npm run lint && npm run typecheck && npm run test:unit",
 		"test:unit": "mocha",
 		"test:dist": "node test/dist.js",
-		"test:typecheck": "tsc --project test/tsconfig.json",
 		"lint": "eslint .",
 		"lint:fix": "eslint --fix ."
 	},
@@ -66,7 +65,7 @@
 		"mocha": "^11.7.6",
 		"rollup": "^4.62.2",
 		"terser": "^5.48.0",
-		"tsx": "^4.23.0",
+		"ts-node": "^10.9.2",
 		"typescript": "^6.0.3"
 	}
 }
