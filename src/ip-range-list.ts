@@ -3,15 +3,17 @@ import { parseSubnet } from './subnet.js';
 import { Interval } from './types.js';
 
 /**
- * A mutable, canonical list of IPv4 and IPv6 ranges.
+ * A mutable IP allowlist/blocklist for IPv4 and IPv6 addresses, ranges, and subnets.
  *
- * IPv4 values are stored as IPv4-mapped IPv6 addresses, so a dotted IPv4
- * candidate and its `::ffff:` representation always have identical membership.
+ * IPv4-mapped IPv6 addresses such as `::ffff:192.0.2.1` are treated as
+ * equivalent to plain IPv4 addresses such as `192.0.2.1`.
  */
 export class IPRangeList {
 	private intervals: Interval[] = [];
 
-	/** A detached snapshot of canonical inclusive ranges, rendered as IPv6 strings. */
+	/**
+	 * Returns a snapshot of the currently stored canonical merged ranges.
+	 */
 	get ranges (): { start: string; end: string }[] {
 		return this.intervals.map(([ start, end ]) => ({
 			start: formatAddress(start),
@@ -19,19 +21,27 @@ export class IPRangeList {
 		}));
 	}
 
-	/** Adds one address to the list. */
+	/**
+	 * Adds one IPv4 or IPv6 address and returns the same list.
+	 */
 	addAddress (address: string): this {
 		const value = parseAddress(address);
 		return this.addInterval(value, value);
 	}
 
-	/** Adds a CIDR subnet, normalizing its host bits to the network boundary. */
+	/**
+	 * Adds a CIDR subnet and returns the same list.
+	 *
+	 * Host bits are normalized to the subnet boundary.
+	 */
 	addSubnet (subnet: string): this {
 		const [ start, end ] = parseSubnet(subnet);
 		return this.addInterval(start, end);
 	}
 
-	/** Adds an inclusive range from start through end. */
+	/**
+	 * Adds the inclusive range between two addresses and returns the same list.
+	 */
 	addRange (start: string, end: string): this {
 		const parsedStart = parseAddress(start);
 		const parsedEnd = parseAddress(end);
@@ -43,7 +53,11 @@ export class IPRangeList {
 		return this.addInterval(parsedStart, parsedEnd);
 	}
 
-	/** Returns whether an address belongs to any stored range. Invalid candidates return false. */
+	/**
+	 * Returns whether an address belongs to a stored range.
+	 *
+	 * Invalid candidates return false.
+	 */
 	contains (address: string): boolean {
 		let candidate: bigint;
 
@@ -72,7 +86,9 @@ export class IPRangeList {
 		return false;
 	}
 
-	/** Alias for {@link contains}, matching Node's BlockList terminology. */
+	/**
+	 * Alias for {@link contains}, matching Node.js `net.BlockList` terminology.
+	 */
 	check (address: string): boolean {
 		return this.contains(address);
 	}
