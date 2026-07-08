@@ -1,3 +1,5 @@
+import type { ParsedAddress } from './types.js';
+
 const IPV4_MAPPED_PREFIX = 0xffff00000000n;
 
 const invalidAddress = (value: unknown): TypeError => new TypeError(`Invalid IP address: ${String(value)}`);
@@ -85,18 +87,24 @@ function parseIPv6 (address: string): bigint | null {
 	return groups.reduce((result, group) => (result << 16n) + BigInt(`0x${group}`), 0n);
 }
 
-export function parseAddress (value: unknown): bigint {
+export function parseAddress (value: unknown): ParsedAddress {
 	if (typeof value !== 'string') {
 		throw invalidAddress(value);
 	}
 
-	const parsed = value.includes(':') ? parseIPv6(value) : parseIPv4(value);
+	const isIPv6 = value.includes(':');
+	const parsed = isIPv6 ? parseIPv6(value) : parseIPv4(value);
 
 	if (parsed === null) {
 		throw invalidAddress(value);
 	}
 
-	return value.includes(':') ? parsed : IPV4_MAPPED_PREFIX + parsed;
+	const normalized = isIPv6 ? parsed : IPV4_MAPPED_PREFIX + parsed;
+
+	return {
+		value: normalized,
+		family: isIPv4Mapped(normalized) ? 'ipv4' : 'ipv6',
+	};
 }
 
 export function formatAddress (value: bigint): string {

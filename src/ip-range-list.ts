@@ -1,4 +1,4 @@
-import { formatAddress, isIPv4Mapped, parseAddress } from './address.js';
+import { formatAddress, parseAddress } from './address.js';
 import { parseSubnet } from './subnet.js';
 import { Interval } from './types.js';
 
@@ -25,8 +25,8 @@ export class IPRangeList {
 	 * Adds one IPv4 or IPv6 address and returns the same list.
 	 */
 	addAddress (address: string): this {
-		const value = parseAddress(address);
-		return this.addInterval(value, value);
+		const parsed = parseAddress(address);
+		return this.addInterval(parsed.value, parsed.value);
 	}
 
 	/**
@@ -46,15 +46,15 @@ export class IPRangeList {
 		const parsedStart = parseAddress(start);
 		const parsedEnd = parseAddress(end);
 
-		if (isIPv4Mapped(parsedStart) !== isIPv4Mapped(parsedEnd)) {
+		if (parsedStart.family !== parsedEnd.family) {
 			throw new RangeError('Range start and end must be from the same IP family');
 		}
 
-		if (parsedStart > parsedEnd) {
+		if (parsedStart.value > parsedEnd.value) {
 			throw new RangeError('Range start must not be greater than range end');
 		}
 
-		return this.addInterval(parsedStart, parsedEnd);
+		return this.addInterval(parsedStart.value, parsedEnd.value);
 	}
 
 	/**
@@ -66,7 +66,7 @@ export class IPRangeList {
 		let candidate: bigint;
 
 		try {
-			candidate = parseAddress(address);
+			candidate = parseAddress(address).value;
 		} catch {
 			return false;
 		}

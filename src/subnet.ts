@@ -1,4 +1,4 @@
-import { isIPv4Mapped, parseAddress } from './address.js';
+import { parseAddress } from './address.js';
 import { Interval } from './types.js';
 
 export function parseSubnet (value: unknown): Interval {
@@ -27,14 +27,14 @@ export function parseSubnet (value: unknown): Interval {
 	}
 
 	const target = parseAddress(address);
-	const bits = isIPv4Mapped(target) ? 32 : rawBits;
+	const bits = target.family === 'ipv4' ? 32 : rawBits;
 
 	if (prefix > bits) {
 		throw new RangeError(`Subnet prefix must be between 0 and ${bits}`);
 	}
 
 	const size = 1n << BigInt(bits - prefix);
-	const start = (target / size) * size;
+	const start = (target.value / size) * size;
 
 	return [ start, start + size - 1n ];
 }
