@@ -19,7 +19,7 @@ Using the package in ESM/CJS applications:
 import { IPRangeList } from 'ip-range-list';
 
 let ranges = new IPRangeList()
-    .addRange('192.0.1.1/24')
+    .addRange('192.0.1.1', '192.0.1.255')
     .addSubnet('192.0.2.9/24')
     .addAddress('2001:db8::1');
 
@@ -28,7 +28,7 @@ ranges.contains('::ffff:192.0.2.42'); // => true
 ranges.contains('2001:db8::2'); // => false
 ```
 
-Using the [UMD build](https://www.jsdelivr.com/package/npm/globalping):
+Using the [UMD build](https://www.jsdelivr.com/package/npm/ip-range-list):
 
 ```js
 const { IPRangeList } = window.ipRangeList;
