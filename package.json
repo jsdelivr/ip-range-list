@@ -1,6 +1,6 @@
 {
 	"name": "ip-range-list",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"description": "An IP address range list with IPv4 and IPv6 support.",
 	"keywords": [
 		"ip",
