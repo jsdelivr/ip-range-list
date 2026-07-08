@@ -16,4 +16,10 @@ export default defineConfig([
 			'no-bitwise': 'off',
 		},
 	},
+	{
+		files: [ 'benchmark/**' ],
+		rules: {
+			'n/no-missing-import': 'off',
+		},
+	},
 ]);
