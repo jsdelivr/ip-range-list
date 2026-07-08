@@ -8,7 +8,7 @@ export function parseSubnet (value: unknown): Interval {
 
 	const separator = value.indexOf('/');
 
-	if (separator === -1 || value.indexOf('/', separator + 1) !== -1) {
+	if (separator === -1 || value.includes('/', separator + 1)) {
 		throw new TypeError(`Invalid subnet: ${value}`);
 	}
 

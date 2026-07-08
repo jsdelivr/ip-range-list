@@ -54,7 +54,7 @@ function parseIPv6 (address: string): bigint | null {
 	const compression = address.indexOf('::');
 
 	if (compression !== -1) {
-		if (address.indexOf('::', compression + 2) !== -1) {
+		if (address.includes('::', compression + 2)) {
 			return null;
 		}
 
