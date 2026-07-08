@@ -1,7 +1,7 @@
 module.exports = {
 	'timeout': 10_000,
 	'spec': [
-		'test/unit/**/*.ts',
+		'test/tests/unit/**/*.ts',
 	],
 	'node-option': [
 		'enable-source-maps',
