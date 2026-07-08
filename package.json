@@ -35,7 +35,8 @@
 	"jsdelivr": "./dist/umd/bundle.min.js",
 	"types": "./dist/esm/index.d.ts",
 	"files": [
-		"dist"
+		"dist",
+		"src"
 	],
 	"engines": {
 		"node": ">=20.6.0"
