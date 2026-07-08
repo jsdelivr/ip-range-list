@@ -37,7 +37,7 @@ let ranges = new IPRangeList();
 
 ## API
 
-> [!TIP]
+> [!NOTE]
 > IPv4-mapped IPv6 addresses such as `::ffff:192.0.2.1` are treated as equivalent to plain IPv4 addresses such as `192.0.2.1` across all methods.
 
 ### `new IPRangeList()`
