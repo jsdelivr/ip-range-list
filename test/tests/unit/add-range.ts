@@ -68,6 +68,14 @@ describe('IPRangeList addRange', () => {
 		expectRangeError(() => ranges.addRange('192.0.2.2', '192.0.2.1'));
 	});
 
+	it('should reject ranges with mixed IP families', () => {
+		const ranges = new IPRangeList();
+
+		assert.strictEqual(ranges.addRange('192.0.2.1', '::ffff:192.0.2.2'), ranges);
+		expectRangeError(() => ranges.addRange('192.0.2.1', '2001:db8::1'));
+		expectRangeError(() => ranges.addRange('2001:db8::1', '192.0.2.1'));
+	});
+
 	it('should reject malformed range bounds', () => {
 		const ranges = new IPRangeList();
 

@@ -1,4 +1,4 @@
-import { formatAddress, parseAddress } from './address.js';
+import { formatAddress, isIPv4Mapped, parseAddress } from './address.js';
 import { parseSubnet } from './subnet.js';
 import { Interval } from './types.js';
 
@@ -45,6 +45,10 @@ export class IPRangeList {
 	addRange (start: string, end: string): this {
 		const parsedStart = parseAddress(start);
 		const parsedEnd = parseAddress(end);
+
+		if (isIPv4Mapped(parsedStart) !== isIPv4Mapped(parsedEnd)) {
+			throw new RangeError('Range start and end must be from the same IP family');
+		}
 
 		if (parsedStart > parsedEnd) {
 			throw new RangeError('Range start must not be greater than range end');
