@@ -84,18 +84,18 @@ Lookups use binary search over the canonical ranges.
 
 ## Benchmark
 
-The package was tested with the included benchmark, comparing `IPRangeList` with Node.js `net.BlockList` against a large
-[Manycast](https://manycast.net/) dataset of IPv4 and IPv6 ranges. See the [benchmark notes](benchmark/README.md) for
-methodology, data preparation, and reproduction steps. The results are as follows:
+The package was tested with the included benchmark, comparing `IPRangeList` with Node.js `net.BlockList` against
+[Manycast](https://manycast.net/) IPv4 and IPv6 prefix data. See the [benchmark notes](benchmark/README.md) for the
+data download script, methodology, and reproduction steps. The results are as follows:
 
 | Scenario | Family | Prefixes | `ip-range-list` | `node:net BlockList` | Result |
 | --- | --- | ---: | ---: | ---: | --- |
-| Full import | IPv4 | 15,349 | 10.28 ms | 11.76 ms | `ip-range-list` 1.14x faster |
-| 1,000,000 lookups after import | IPv4 | 15,349 | 364.19 ms | 29,951.53 ms | `ip-range-list` 82.24x faster |
-| Interleaved import/lookups | IPv4 | 15,349 | 15.56 ms | 122.22 ms | `ip-range-list` 7.86x faster |
-| Full import | IPv6 | 13,214 | 17.49 ms | 10.99 ms | `BlockList` 1.59x faster |
-| 1,000,000 lookups after import | IPv6 | 13,214 | 846.15 ms | 27,106.68 ms | `ip-range-list` 32.04x faster |
-| Interleaved import/lookups | IPv6 | 13,214 | 28.12 ms | 93.34 ms | `ip-range-list` 3.32x faster |
+| Full import | IPv4 | 41,207 | 33.65 ms | 27.09 ms | `BlockList` 1.24x faster |
+| 1,000,000 lookups after import | IPv4 | 41,207 | 404.93 ms | 111,372.56 ms | `ip-range-list` 275.04x faster |
+| Interleaved import/lookups | IPv4 | 41,207 | 38.42 ms | 823.27 ms | `ip-range-list` 21.43x faster |
+| Full import | IPv6 | 14,425 | 20.13 ms | 10.68 ms | `BlockList` 1.88x faster |
+| 1,000,000 lookups after import | IPv6 | 14,425 | 854.48 ms | 28,942.36 ms | `ip-range-list` 33.87x faster |
+| Interleaved import/lookups | IPv6 | 14,425 | 30.17 ms | 112.65 ms | `ip-range-list` 3.73x faster |
 
 ## Development
 

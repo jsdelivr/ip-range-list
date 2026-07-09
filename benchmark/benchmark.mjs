@@ -1,8 +1,18 @@
 import { readFileSync } from 'node:fs';
 import { BlockList } from 'node:net';
 import { cpus } from 'node:os';
+import { dirname, join } from 'node:path';
 import { performance } from 'node:perf_hooks';
+import { fileURLToPath } from 'node:url';
+import v8 from 'node:v8';
+import vm from 'node:vm';
 import { IPRangeList } from '../dist/esm/index.js';
+
+const benchmarkDir = dirname(fileURLToPath(import.meta.url));
+const defaultFiles = {
+	ipv4: join(benchmarkDir, 'ipv4-ranges.csv'),
+	ipv6: join(benchmarkDir, 'ipv6-ranges.csv'),
+};
 
 const packageAliases = {
 	'all': 'all',
@@ -25,9 +35,11 @@ const packages = {
 
 function printUsage () {
 	console.error(`Usage:
-  node --expose-gc benchmark/benchmark.mjs --family <ipv4|ipv6> --file <csv> [options]
+  node benchmark/benchmark.mjs [--family <all|ipv4|ipv6>] [--file <csv>] [options]
 
 Options:
+  --family <all|ipv4|ipv6>                 Address family to benchmark. Default: all
+  --file <csv>                             Input CSV for the selected family
   --package <all|ip-range-list|blocklist>  Package to benchmark. Default: all
   --runs <number>                          Measured runs. Default: 7
   --warmups <number>                       Warmup runs. Default: 2
@@ -49,6 +61,7 @@ function parsePositiveInteger (name, value) {
 
 function parseArgs (args) {
 	const options = {
+		family: 'all',
 		packageName: 'all',
 		runs: 7,
 		warmups: 2,
@@ -107,12 +120,12 @@ function parseArgs (args) {
 		}
 	}
 
-	if (options.family !== 'ipv4' && options.family !== 'ipv6') {
-		throw new TypeError('--family must be ipv4 or ipv6');
+	if (options.family !== 'all' && options.family !== 'ipv4' && options.family !== 'ipv6') {
+		throw new TypeError('--family must be all, ipv4, or ipv6');
 	}
 
-	if (options.file === undefined) {
-		throw new TypeError('--file is required');
+	if (options.family === 'all' && options.file !== undefined) {
+		throw new TypeError('--file can only be used with --family ipv4 or --family ipv6');
 	}
 
 	if (!(options.packageName in packageAliases)) {
@@ -130,6 +143,21 @@ function loadPrefixes (file) {
 
 		return { cidr, address, prefix: Number(prefix) };
 	});
+}
+
+function ensureGarbageCollector () {
+	if (typeof globalThis.gc === 'function') {
+		return true;
+	}
+
+	try {
+		v8.setFlagsFromString('--expose_gc');
+		globalThis.gc = vm.runInNewContext('gc');
+	} catch {
+		return false;
+	}
+
+	return typeof globalThis.gc === 'function';
 }
 
 function percentile (values, p) {
@@ -269,6 +297,14 @@ function getPackageEntries (packageName) {
 	return packageLabel === 'all' ? Object.entries(packages) : [ [ packageLabel, packages[packageLabel] ] ];
 }
 
+function getFamilyEntries (options) {
+	if (options.family === 'all') {
+		return Object.entries(defaultFiles);
+	}
+
+	return [ [ options.family, options.file ?? defaultFiles[options.family] ] ];
+}
+
 let options;
 
 try {
@@ -279,23 +315,31 @@ try {
 	process.exit(1);
 }
 
-let prefixes;
-
-try {
-	prefixes = loadPrefixes(options.file);
-} catch (error) {
-	console.error(error.message);
-	process.exit(1);
-}
+const hasGarbageCollector = ensureGarbageCollector();
+const familyEntries = getFamilyEntries(options);
+const prefixesByFamily = new Map();
 
 const results = [];
 
-for (const [ name, impl ] of getPackageEntries(options.packageName)) {
-	console.error(`Running ${name} ${options.family}...`);
-	results.push(benchmarkOne(name, impl, options.family, prefixes, options));
+for (const [ family, file ] of familyEntries) {
+	try {
+		prefixesByFamily.set(family, loadPrefixes(file));
+	} catch (error) {
+		console.error(error.message);
+		process.exit(1);
+	}
 }
 
-if (globalThis.gc === undefined) {
+for (const [ family ] of familyEntries) {
+	const prefixes = prefixesByFamily.get(family);
+
+	for (const [ name, impl ] of getPackageEntries(options.packageName)) {
+		console.error(`Running ${name} ${family}...`);
+		results.push(benchmarkOne(name, impl, family, prefixes, options));
+	}
+}
+
+if (!hasGarbageCollector) {
 	console.error('Tip: run with --expose-gc to reduce cross-run heap noise.');
 }
 
@@ -304,7 +348,7 @@ console.log(JSON.stringify({
 		node: process.version,
 		platform: `${process.platform} ${process.arch}`,
 		cpu: cpus()[0]?.model,
-		file: options.file,
+		files: Object.fromEntries(familyEntries),
 		family: options.family,
 		package: options.packageName,
 		runs: options.runs,
@@ -314,4 +358,4 @@ console.log(JSON.stringify({
 		checksPerChunk: options.checksPerChunk,
 	},
 	results,
-}, null, 2));
+}, null, '\t'));
