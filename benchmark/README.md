@@ -1,12 +1,13 @@
 # Benchmark
 
-This benchmark compares `IPRangeList` with Node.js `net.BlockList` using a CSV file of IPv4 or IPv6 CIDR ranges.
+This benchmark compares `IPRangeList` with Node.js `net.BlockList` using IPv4 and IPv6 CIDR range CSV files.
 
-CSV parsing and lookup address setup happen before timing starts. The benchmark measures three workloads:
+CSV parsing and lookup address setup happen before timing starts. IPv4 prefixes are queried as IPv4-mapped IPv6
+addresses so both implementations are measured in one combined address space. The benchmark measures these workloads:
 
 - importing the full dataset into a new list;
-- checking addresses after the full dataset has been imported;
-- importing the dataset in batches, with checks between batches.
+- checking present-only, missing-only, and mixed address sets after the full dataset has been imported;
+- importing the dataset in batches, with present-only, missing-only, and mixed checks between batches.
 
 ## Data
 
@@ -25,7 +26,7 @@ prefix,source
 2001:db8:abcd::/48,example
 ```
 
-Use `--family ipv4` for IPv4 ranges and `--family ipv6` for IPv6 ranges. Do not mix address families in one run.
+The default benchmark loads both generated files. Use `--ipv4-file` and `--ipv6-file` to override them.
 
 The default inputs are generated from [Manycast](https://manycast.net/) LACES anycast prefix data:
 
@@ -42,52 +43,45 @@ npm run build
 npm run benchmark
 ```
 
-By default, the benchmark runs both IPv4 and IPv6 with `benchmark/ipv4-ranges.csv` and `benchmark/ipv6-ranges.csv`.
+By default, the benchmark loads both IPv4 and IPv6 data from `benchmark/ipv4-ranges.csv` and
+`benchmark/ipv6-ranges.csv`.
 You can also run it as `node --expose-gc benchmark/benchmark.js`; the script tries to enable `gc` itself and prints a
 tip when the runtime still needs the flag.
 
 Options:
 
-- `--family <all|ipv4|ipv6>` selects the address family. The default is `all`.
-- `--file <csv>` uses a custom input file for the selected `ipv4` or `ipv6` family.
+- `--ipv4-file <csv>` sets the IPv4 input CSV. The default is `benchmark/ipv4-ranges.csv`.
+- `--ipv6-file <csv>` sets the IPv6 input CSV. The default is `benchmark/ipv6-ranges.csv`.
 - `--package <all|ip-range-list|blocklist>` selects which implementation to run. The default is `all`.
 - `--runs <number>` sets the number of measured runs. The default is `7`.
 - `--warmups <number>` sets the number of warmup runs before measurement. The default is `2`.
 - `--large-checks <number>` sets the number of lookups after full import. The default is `1000000`.
 - `--chunks <number>` sets the number of import batches for the interleaved workload. The default is `100`.
 - `--checks-per-chunk <number>` sets the number of lookups after each import batch. The default is `100`.
+- `--query-profile <all|present|missing|mixed>` selects which query profile to run. The default is `all`.
+- `--mixed-miss-rate <number>` sets the missing-address share in the mixed profile. The default is `0.8`.
+- `--verbose` prints progress output.
 
 The script prints JSON with the settings, hit counts, and average, minimum, and p95 timings for each implementation.
-To rerun without downloading data, or to run one family with a custom file, use the run-only script:
+To rerun without downloading data, or to run with custom files, use the run-only script:
 
 ```sh
-npm run benchmark:run -- --family ipv4 --file path/to/ipv4-ranges.csv
-npm run benchmark:run -- --family ipv6 --file path/to/ipv6-ranges.csv
+npm run benchmark:run -- --ipv4-file path/to/ipv4-ranges.csv --ipv6-file path/to/ipv6-ranges.csv
 ```
 
 ## Scenarios
 
 Full import measures how long it takes to add every prefix from the CSV file to a new list.
 
-Large lookup imports the full dataset, then checks addresses derived from the dataset prefixes. With the default
-settings, this runs 1,000,000 checks.
+Large lookup imports the full dataset, then checks three query profiles. `present` contains only addresses derived from
+the dataset prefixes. `missing` contains only generated addresses that are not present in the dataset. `mixed` contains
+20% present addresses and 80% missing addresses by default. With the default settings, each profile runs 1,000,000
+checks.
 
 Interleaved import/lookups splits the dataset into batches, imports one batch at a time, and runs lookups after each
-batch. With the default settings, this uses 100 batches and 100 lookups after each batch.
+batch. Present queries in this workload only use prefixes already imported in the current or previous batches. With the
+default settings, this uses 100 batches and 100 lookups after each batch for each selected profile.
 
-## Published Results
-
-The published results were collected with Node.js v24.6.0 on Windows 11 x64, Intel Core Ultra 9 275HX by running
-`npm run benchmark`. The input data was generated from the unfiltered first column of the Manycast LACES anycast prefix
-data. The benchmark used the default settings: 7 measured runs after 2 warmup runs, 1,000,000 checks in the large
-lookup workload, and 100 import batches with 100 checks after each batch in the interleaved workload. Table values are
-averages in milliseconds.
-
-| Scenario | Family | Prefixes | `ip-range-list` | `node:net BlockList` | Result |
-| --- | --- | ---: | ---: | ---: | --- |
-| Full import | IPv4 | 41,207 | 33.65 ms | 27.09 ms | `BlockList` 1.24x faster |
-| 1,000,000 lookups after import | IPv4 | 41,207 | 404.93 ms | 111,372.56 ms | `ip-range-list` 275.04x faster |
-| Interleaved import/lookups | IPv4 | 41,207 | 38.42 ms | 823.27 ms | `ip-range-list` 21.43x faster |
-| Full import | IPv6 | 14,425 | 20.13 ms | 10.68 ms | `BlockList` 1.88x faster |
-| 1,000,000 lookups after import | IPv6 | 14,425 | 854.48 ms | 28,942.36 ms | `ip-range-list` 33.87x faster |
-| Interleaved import/lookups | IPv6 | 14,425 | 30.17 ms | 112.65 ms | `ip-range-list` 3.73x faster |
+Missing addresses are generated with a seeded pseudo-random generator. The generator preserves the source dataset's
+IPv4/IPv6 prefix ratio, maps generated IPv4 misses to IPv4-mapped IPv6 addresses, and rejects generated addresses that
+fall inside the loaded ranges.
