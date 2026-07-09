@@ -50,8 +50,8 @@
 		"test": "npm run lint && npm run typecheck && npm run test:unit",
 		"test:unit": "mocha",
 		"test:dist": "node test/dist.js",
-		"benchmark:prepare": "node benchmark/download-data.mjs",
-		"benchmark:run": "node benchmark/benchmark.mjs",
+		"benchmark:prepare": "node benchmark/download-data.js",
+		"benchmark:run": "node benchmark/benchmark.js",
 		"benchmark": "npm run benchmark:prepare && npm run benchmark:run",
 		"lint": "eslint .",
 		"lint:fix": "eslint --fix ."

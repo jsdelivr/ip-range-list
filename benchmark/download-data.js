@@ -68,7 +68,7 @@ async function downloadPrefixes ({ url, output }) {
 
 	writeFileSync(output, `${prefixes.join('\n')}\n`);
 
-	console.error(`Saved ${(prefixes.length - 1).toLocaleString('en-US')} prefixes to ${output}`);
+	console.log(`Saved ${(prefixes.length - 1).toLocaleString('en-US')} prefixes to ${output}`);
 }
 
 try {

@@ -35,7 +35,7 @@ const packages = {
 
 function printUsage () {
 	console.error(`Usage:
-  node benchmark/benchmark.mjs [--family <all|ipv4|ipv6>] [--file <csv>] [options]
+  node benchmark/benchmark.js [--family <all|ipv4|ipv6>] [--file <csv>] [options]
 
 Options:
   --family <all|ipv4|ipv6>                 Address family to benchmark. Default: all

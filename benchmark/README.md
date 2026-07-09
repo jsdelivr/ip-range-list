@@ -43,7 +43,7 @@ npm run benchmark
 ```
 
 By default, the benchmark runs both IPv4 and IPv6 with `benchmark/ipv4-ranges.csv` and `benchmark/ipv6-ranges.csv`.
-You can also run it as `node --expose-gc benchmark/benchmark.mjs`; the script tries to enable `gc` itself and prints a
+You can also run it as `node --expose-gc benchmark/benchmark.js`; the script tries to enable `gc` itself and prints a
 tip when the runtime still needs the flag.
 
 Options:
