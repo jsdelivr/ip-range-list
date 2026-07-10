@@ -200,7 +200,7 @@ function normalizePrefix (cidr, sourceFamily) {
 function loadPrefixes (file, sourceFamily) {
 	const lines = readFileSync(file, 'utf8').trim().split(/\r?\n/);
 
-	return lines.slice(1).filter(Boolean).map(cidr => normalizePrefix(cidr, sourceFamily));
+	return lines.slice(1).map(line => line.split(',', 1)[0]).filter(Boolean).map(cidr => normalizePrefix(cidr, sourceFamily));
 }
 
 function ensureGarbageCollector () {
