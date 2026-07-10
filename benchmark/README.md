@@ -85,3 +85,23 @@ default settings, this uses 100 batches and 100 lookups after each batch for eac
 Missing addresses are generated with a seeded pseudo-random generator. The generator preserves the source dataset's
 IPv4/IPv6 prefix ratio, maps generated IPv4 misses to IPv4-mapped IPv6 addresses, and rejects generated addresses that
 fall inside the loaded ranges.
+
+## Published Results
+
+The published results were collected with Node.js v24.6.0 on Windows 11 x64, Intel Core Ultra 9 275HX by running
+`npm run benchmark`. The input data was generated from the unfiltered first column of the Manycast LACES anycast prefix
+data and contained 55,473 prefixes: 41,207 IPv4 prefixes and 14,266 IPv6 prefixes.
+
+The benchmark used 7 measured runs after 2 warmup runs. Each large lookup profile ran 1,000,000 checks. The interleaved
+workload used 100 import batches with 100 checks after each batch. The mixed profile used 20% present addresses and 80%
+missing addresses. Table values are averages in milliseconds.
+
+| Scenario | Profile | Checks | `ip-range-list` | `node:net BlockList` | Result |
+| --- | --- | ---: | ---: | ---: | --- |
+| Full import | - | 55,473 prefixes | 54.09 ms | 40.36 ms | `BlockList` 1.34x faster |
+| Large lookup after import | present | 1,000,000 | 1,472.24 ms | 184,395.46 ms | `ip-range-list` 125.25x faster |
+| Large lookup after import | missing | 1,000,000 | 1,568.54 ms | 394,476.87 ms | `ip-range-list` 251.49x faster |
+| Large lookup after import | mixed | 1,000,000 | 1,609.40 ms | 356,680.64 ms | `ip-range-list` 221.62x faster |
+| Interleaved import/lookups | present | 10,000 | 71.01 ms | 1,009.32 ms | `ip-range-list` 14.21x faster |
+| Interleaved import/lookups | missing | 10,000 | 96.28 ms | 2,023.87 ms | `ip-range-list` 21.02x faster |
+| Interleaved import/lookups | mixed | 10,000 | 98.54 ms | 1,818.27 ms | `ip-range-list` 18.45x faster |

@@ -86,7 +86,21 @@ Lookups use binary search over the canonical ranges.
 
 The package includes a benchmark comparing `IPRangeList` with Node.js `net.BlockList` against
 [Manycast](https://manycast.net/) IPv4 and IPv6 prefix data. See the [benchmark notes](benchmark/README.md) for the
-data download script, query profiles, methodology, and reproduction steps.
+data download script, query profiles, methodology, and reproduction steps. The published run used 55,473 prefixes:
+41,207 IPv4 prefixes and 14,266 IPv6 prefixes.
+
+The `present` profile checks addresses from the dataset prefixes, the `missing` profile checks generated addresses
+outside the loaded ranges, and the `mixed` profile uses 20% present addresses and 80% missing addresses.
+
+| Scenario | Profile | `ip-range-list` | `node:net BlockList` | Result |
+| --- | --- | ---: | ---: | --- |
+| Full import | - | 54.09 ms | 40.36 ms | `BlockList` 1.34x faster |
+| 1,000,000 lookups after import | present | 1,472.24 ms | 184,395.46 ms | `ip-range-list` 125.25x faster |
+| 1,000,000 lookups after import | missing | 1,568.54 ms | 394,476.87 ms | `ip-range-list` 251.49x faster |
+| 1,000,000 lookups after import | mixed | 1,609.40 ms | 356,680.64 ms | `ip-range-list` 221.62x faster |
+| Interleaved import/lookups | present | 71.01 ms | 1,009.32 ms | `ip-range-list` 14.21x faster |
+| Interleaved import/lookups | missing | 96.28 ms | 2,023.87 ms | `ip-range-list` 21.02x faster |
+| Interleaved import/lookups | mixed | 98.54 ms | 1,818.27 ms | `ip-range-list` 18.45x faster |
 
 ## Development
 
