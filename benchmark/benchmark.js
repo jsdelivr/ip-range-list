@@ -279,13 +279,17 @@ function createMissGuard (prefixes) {
 }
 
 function makeRandomMissAddress (random, missGuard, sourceFamily) {
-	let address;
+	const maxAttempts = 10_000;
 
-	do {
-		address = sourceFamily === 'ipv4' ? mapIpv4Address(makeRandomIpv4Address(random)) : makeRandomIpv6Address(random);
-	} while (missGuard.contains(address));
+	for (let attempt = 0; attempt < maxAttempts; attempt++) {
+		const address = sourceFamily === 'ipv4' ? mapIpv4Address(makeRandomIpv4Address(random)) : makeRandomIpv6Address(random);
 
-	return address;
+		if (!missGuard.contains(address)) {
+			return address;
+		}
+	}
+
+	throw new Error(`No uncovered ${sourceFamily} address found after ${maxAttempts} random attempts.`);
 }
 
 function getMissCounts (missCount, ipv4MissRatio) {
