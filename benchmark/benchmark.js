@@ -156,11 +156,11 @@ function parseArgs (args) {
 		}
 	}
 
-	if (!(options.packageName in packageAliases)) {
+	if (!Object.hasOwn(packageAliases, options.packageName)) {
 		throw new TypeError('--package must be all, ip-range-list, or blocklist');
 	}
 
-	if (!(options.queryProfile in queryProfileAliases)) {
+	if (!Object.hasOwn(queryProfileAliases, options.queryProfile)) {
 		throw new TypeError('--query-profile must be all, present, missing, or mixed');
 	}
 
