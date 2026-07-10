@@ -628,17 +628,22 @@ try {
 const hasGarbageCollector = ensureGarbageCollector();
 let ipv4Prefixes;
 let ipv6Prefixes;
+let prefixes;
 const results = [];
 
 try {
 	ipv4Prefixes = loadPrefixes(options.ipv4File, 'ipv4');
 	ipv6Prefixes = loadPrefixes(options.ipv6File, 'ipv6');
+	prefixes = [ ...ipv4Prefixes, ...ipv6Prefixes ];
+
+	if (prefixes.length === 0) {
+		throw new Error('No prefixes found in the input files.');
+	}
 } catch (error) {
 	console.error(error.message);
 	process.exit(1);
 }
 
-const prefixes = [ ...ipv4Prefixes, ...ipv6Prefixes ];
 const chunks = makeChunks(prefixes, options.chunks);
 const sourcePrefixCounts = {
 	ipv4: ipv4Prefixes.length,
