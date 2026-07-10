@@ -645,7 +645,7 @@ const querySets = prepareQuerySets(prefixes, chunks, missGuard, sourcePrefixCoun
 
 for (const [ name, impl ] of getPackageEntries(options.packageName)) {
 	if (options.verbose) {
-		console.log(`Running ${name}...`);
+		console.error(`Running ${name}...`);
 	}
 
 	results.push(benchmarkOne(name, impl, prefixes, sourcePrefixCounts, chunks, querySets, options));
