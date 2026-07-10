@@ -50,7 +50,7 @@
 		"test": "npm run lint && npm run typecheck && npm run test:unit",
 		"test:unit": "mocha",
 		"test:dist": "node test/dist.js",
-		"benchmark:prepare": "node benchmark/download-data.js",
+		"benchmark:prepare": "npm run build && node benchmark/download-data.js",
 		"benchmark:run": "node benchmark/benchmark.js",
 		"benchmark": "npm run --silent benchmark:prepare && npm run --silent benchmark:run",
 		"lint": "eslint .",
