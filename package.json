@@ -46,15 +46,17 @@
 		"build:esm": "tsc",
 		"build:bundle": "rollup --config",
 		"build:umd:minify": "terser dist/umd/bundle.js --output dist/umd/bundle.min.js --source-map 'content=dist/umd/bundle.js.map,url=bundle.min.js.map'",
-		"typecheck": "tsc --noEmit",
-		"test": "npm run lint && npm run typecheck && npm run test:unit",
+		"test": "npm run lint && npm run test:unit",
 		"test:unit": "mocha",
 		"test:dist": "node test/dist.js",
 		"benchmark:prepare": "npm run build && node benchmark/download-data.js",
 		"benchmark:run": "node benchmark/benchmark.js",
 		"benchmark": "npm run --silent benchmark:prepare && npm run --silent benchmark:run",
-		"lint": "eslint .",
-		"lint:fix": "eslint --fix ."
+		"lint": "npm run lint:js && npm run lint:types",
+		"lint:fix": "npm run lint:js:fix && npm run lint:types",
+		"lint:js": "eslint .",
+		"lint:js:fix": "eslint --fix .",
+		"lint:types": "tsc --noEmit"
 	},
 	"devDependencies": {
 		"@martin-kolarik/eslint-config": "^9.0.1",
