@@ -64,7 +64,7 @@ Options:
   implementations and query profiles.
 - `--verbose` prints progress output.
 
-The script prints a results table and saves the full settings, hit counts, and average, minimum, and p95
+The script prints a results table and saves the full settings, hit counts, and average, and minimum
 timings to `benchmark/results-YYYYMMDD-HHMMSS.json`.
 To rerun without downloading data, or to run with custom files, use the run-only script:
 

@@ -230,20 +230,12 @@ function ensureGarbageCollector () {
 	return typeof globalThis.gc === 'function';
 }
 
-function percentile (values, p) {
-	const sorted = values.toSorted((a, b) => a - b);
-	const index = Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * p));
-
-	return sorted[index];
-}
-
 function summarize (values) {
 	const average = values.reduce((sum, value) => sum + value, 0) / values.length;
 
 	return {
 		average,
 		min: Math.min(...values),
-		p95: percentile(values, 0.95),
 	};
 }
 
