@@ -60,9 +60,12 @@ Options:
 - `--checks-per-chunk <number>` sets the number of lookups after each import batch. The default is `100`.
 - `--query-profile <all|present|missing|mixed>` selects which query profile to run. The default is `all`.
 - `--mixed-miss-rate <number>` sets the missing-address share in the mixed profile. The default is `0.8`.
+- `--update-readme` updates the published result tables in `README.md` and `benchmark/README.md`. It requires all
+  implementations and query profiles.
 - `--verbose` prints progress output.
 
-The script prints JSON with the settings, hit counts, and average, minimum, and p95 timings for each implementation.
+The script prints a results table and saves the full settings, hit counts, and average, and minimum
+timings to `benchmark/results-YYYYMMDD-HHMMSS.json`.
 To rerun without downloading data, or to run with custom files, use the run-only script:
 
 ```sh
@@ -96,6 +99,7 @@ The benchmark used 7 measured runs after 2 warmup runs. Each large lookup profil
 workload used 100 import batches with 100 checks after each batch. The mixed profile used 20% present addresses and 80%
 missing addresses. Table values are averages in milliseconds.
 
+<!-- benchmark-results:start -->
 | Scenario | Profile | Checks | `ip-range-list` | `node:net BlockList` | Result |
 | --- | --- | ---: | ---: | ---: | --- |
 | Full import | - | 55,473 prefixes | 54.09 ms | 40.36 ms | `BlockList` 1.34x faster |
@@ -105,3 +109,4 @@ missing addresses. Table values are averages in milliseconds.
 | Interleaved import/lookups | present | 10,000 | 71.01 ms | 1,009.32 ms | `ip-range-list` 14.21x faster |
 | Interleaved import/lookups | missing | 10,000 | 96.28 ms | 2,023.87 ms | `ip-range-list` 21.02x faster |
 | Interleaved import/lookups | mixed | 10,000 | 98.54 ms | 1,818.27 ms | `ip-range-list` 18.45x faster |
+<!-- benchmark-results:end -->

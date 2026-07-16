@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { BlockList } from 'node:net';
 import { cpus } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -9,6 +9,7 @@ import vm from 'node:vm';
 import { IPRangeList } from '../dist/esm/index.js';
 
 const benchmarkDir = dirname(fileURLToPath(import.meta.url));
+const rootDir = dirname(benchmarkDir);
 const defaultFiles = {
 	ipv4: join(benchmarkDir, 'ipv4-ranges.csv'),
 	ipv6: join(benchmarkDir, 'ipv6-ranges.csv'),
@@ -56,6 +57,7 @@ Options:
   --query-profile <all|present|missing|mixed>
                                            Query profile to run. Default: all
   --mixed-miss-rate <number>               Missing-address share in mixed queries. Default: 0.8
+  --update-readme                          Update the published result tables in both README files
   --verbose                                Print progress output
   --help                                   Show this message`);
 }
@@ -92,6 +94,7 @@ function parseArgs (args) {
 		checksPerChunk: 100,
 		queryProfile: 'all',
 		mixedMissRate: 0.8,
+		updateReadme: false,
 		verbose: false,
 	};
 
@@ -105,6 +108,11 @@ function parseArgs (args) {
 
 		if (arg === '--verbose') {
 			options.verbose = true;
+			continue;
+		}
+
+		if (arg === '--update-readme') {
+			options.updateReadme = true;
 			continue;
 		}
 
@@ -164,6 +172,10 @@ function parseArgs (args) {
 		throw new TypeError('--query-profile must be all, present, missing, or mixed');
 	}
 
+	if (options.updateReadme && (options.packageName !== 'all' || options.queryProfile !== 'all')) {
+		throw new TypeError('--update-readme requires --package all and --query-profile all');
+	}
+
 	return options;
 }
 
@@ -218,20 +230,12 @@ function ensureGarbageCollector () {
 	return typeof globalThis.gc === 'function';
 }
 
-function percentile (values, p) {
-	const sorted = values.toSorted((a, b) => a - b);
-	const index = Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * p));
-
-	return sorted[index];
-}
-
 function summarize (values) {
 	const average = values.reduce((sum, value) => sum + value, 0) / values.length;
 
 	return {
 		average,
 		min: Math.min(...values),
-		p95: percentile(values, 0.95),
 	};
 }
 
@@ -615,6 +619,113 @@ function getPackageEntries (packageName) {
 	return packageLabel === 'all' ? Object.entries(packages) : [ [ packageLabel, packages[packageLabel] ] ];
 }
 
+function formatDuration (milliseconds) {
+	return `${milliseconds.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ms`;
+}
+
+function getComparison (entries) {
+	if (entries.length !== 2) {
+		return undefined;
+	}
+
+	const [ first, second ] = entries;
+
+	if (first.milliseconds === second.milliseconds) {
+		return 'Same speed';
+	}
+
+	const [ faster, slower ] = first.milliseconds < second.milliseconds ? [ first, second ] : [ second, first ];
+	const name = faster.name === 'node:net BlockList' ? 'BlockList' : faster.name;
+
+	return `\`${name}\` ${(slower.milliseconds / faster.milliseconds).toFixed(2)}x faster`;
+}
+
+function renderTable (headers, rows, rightAlignedColumns) {
+	const widths = headers.map((header, index) => Math.max(header.length, ...rows.map(row => row[index].length)));
+	const renderRow = row => `| ${row.map((cell, index) => rightAlignedColumns.has(index)
+		? cell.padStart(widths[index])
+		: cell.padEnd(widths[index])).join(' | ')} |`;
+	const separator = widths.map((width, index) => rightAlignedColumns.has(index)
+		? `${'-'.repeat(width - 1)}:`
+		: '-'.repeat(width));
+
+	return [ renderRow(headers), renderRow(separator), ...rows.map(renderRow) ].join('\n');
+}
+
+function formatResultsTable (results, { includeChecks = true } = {}) {
+	const headers = [ 'Scenario', 'Profile' ];
+
+	if (includeChecks) {
+		headers.push('Checks');
+	}
+
+	headers.push(...results.map(result => `\`${result.name}\``));
+
+	if (results.length === 2) {
+		headers.push('Result');
+	}
+
+	const rows = [];
+	const addRow = (scenario, profile, checks, getMilliseconds) => {
+		const entries = results.map(result => ({ name: result.name, milliseconds: getMilliseconds(result) }));
+		const row = [ scenario, profile ];
+
+		if (includeChecks) {
+			row.push(checks);
+		}
+
+		row.push(...entries.map(entry => formatDuration(entry.milliseconds)));
+
+		const comparison = getComparison(entries);
+
+		if (comparison) {
+			row.push(comparison);
+		}
+
+		rows.push(row);
+	};
+	const prefixCount = results[0].prefixCount.toLocaleString('en-US');
+
+	addRow('Full import', '-', `${prefixCount} prefixes`, result => result.largeImport.average);
+
+	for (const profile of results[0].queryProfiles) {
+		const checks = results[0].largeProfiles[profile].checks.toLocaleString('en-US');
+		const scenario = includeChecks ? 'Large lookup after import' : `${checks} lookups after import`;
+		addRow(scenario, profile, checks, result => result.largeCheck[profile].average);
+	}
+
+	for (const profile of results[0].queryProfiles) {
+		const checks = results[0].interleavedProfiles[profile].checks.toLocaleString('en-US');
+		addRow('Interleaved import/lookups', profile, checks, result => result.interleaved[profile].average);
+	}
+
+	const firstImplementationColumn = includeChecks ? 3 : 2;
+	const rightAlignedColumns = new Set(results.map((_, index) => firstImplementationColumn + index));
+
+	if (includeChecks) {
+		rightAlignedColumns.add(2);
+	}
+
+	return renderTable(headers, rows, rightAlignedColumns);
+}
+
+function updateResultsTable (file, table) {
+	const startAnchor = '<!-- benchmark-results:start -->';
+	const endAnchor = '<!-- benchmark-results:end -->';
+	const contents = readFileSync(file, 'utf8');
+	const startIndex = contents.indexOf(startAnchor);
+	const endIndex = contents.indexOf(endAnchor, startIndex + startAnchor.length);
+
+	if (startIndex === -1 || endIndex === -1) {
+		throw new Error(`Benchmark result anchors not found in ${file}`);
+	}
+
+	const tableStart = startIndex + startAnchor.length;
+	const updated = `${contents.slice(0, tableStart)}\n${table}\n${contents.slice(endIndex)}`;
+
+	writeFileSync(file, updated);
+}
+
 let options;
 
 try {
@@ -654,17 +765,17 @@ const querySets = prepareQuerySets(prefixes, chunks, missGuard, sourcePrefixCoun
 
 for (const [ name, impl ] of getPackageEntries(options.packageName)) {
 	if (options.verbose) {
-		console.error(`Running ${name}...`);
+		console.log(`Running ${name}...`);
 	}
 
 	results.push(benchmarkOne(name, impl, prefixes, sourcePrefixCounts, chunks, querySets, options));
 }
 
 if (!hasGarbageCollector) {
-	console.error('Tip: run with --expose-gc to reduce cross-run heap noise.');
+	console.log('Tip: run with --expose-gc to reduce cross-run heap noise.');
 }
 
-console.log(JSON.stringify({
+const output = {
 	settings: {
 		node: process.version,
 		platform: `${process.platform} ${process.arch}`,
@@ -683,4 +794,25 @@ console.log(JSON.stringify({
 		mixedMissRate: options.mixedMissRate,
 	},
 	results,
-}, null, '\t'));
+};
+const timestamp = new Date().toISOString().replaceAll(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');
+const resultsFileName = `results-${timestamp}.json`;
+
+try {
+	writeFileSync(join(benchmarkDir, resultsFileName), `${JSON.stringify(output, null, '\t')}\n`);
+
+	if (options.updateReadme) {
+		updateResultsTable(join(rootDir, 'README.md'), formatResultsTable(results, { includeChecks: false }));
+		updateResultsTable(join(benchmarkDir, 'README.md'), formatResultsTable(results));
+	}
+} catch (error) {
+	console.error(error.message);
+	process.exit(1);
+}
+
+console.log(formatResultsTable(results));
+console.log(`\nComplete results saved to benchmark/${resultsFileName}`);
+
+if (options.updateReadme) {
+	console.log('Updated benchmark tables in README.md and benchmark/README.md.');
+}
