@@ -7,6 +7,7 @@ export default defineConfig([
 			'dist/**',
 			'node_modules/**',
 			'package-lock.json',
+			'benchmark/results*',
 		],
 	},
 	...typescript,

@@ -92,6 +92,7 @@ data download script, query profiles, methodology, and reproduction steps. The p
 The `present` profile checks addresses from the dataset prefixes, the `missing` profile checks generated addresses
 outside the loaded ranges, and the `mixed` profile uses 20% present addresses and 80% missing addresses.
 
+<!-- benchmark-results:start -->
 | Scenario | Profile | `ip-range-list` | `node:net BlockList` | Result |
 | --- | --- | ---: | ---: | --- |
 | Full import | - | 54.09 ms | 40.36 ms | `BlockList` 1.34x faster |
@@ -101,6 +102,7 @@ outside the loaded ranges, and the `mixed` profile uses 20% present addresses an
 | Interleaved import/lookups | present | 71.01 ms | 1,009.32 ms | `ip-range-list` 14.21x faster |
 | Interleaved import/lookups | missing | 96.28 ms | 2,023.87 ms | `ip-range-list` 21.02x faster |
 | Interleaved import/lookups | mixed | 98.54 ms | 1,818.27 ms | `ip-range-list` 18.45x faster |
+<!-- benchmark-results:end -->
 
 ## Development
 
