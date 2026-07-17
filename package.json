@@ -1,7 +1,7 @@
 {
 	"name": "ip-range-list",
 	"version": "1.0.0",
-	"description": "A fast IP address range list with IPv4 and IPv6 support.",
+	"description": "A fast IP address range list for allowlist or blocklist checks.",
 	"keywords": [
 		"ip",
 		"ipv4",
